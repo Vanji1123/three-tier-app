@@ -2,6 +2,8 @@ pipeline {
 
     agent {
         kubernetes {
+            inheritFrom 'default'
+
             yaml """
 apiVersion: v1
 kind: Pod
@@ -10,28 +12,27 @@ spec:
 
   containers:
 
-  - name: docker
-    image: docker:27.0.3
+  - name: kaniko
+    image: gcr.io/kaniko-project/executor:latest
     command:
-    - cat
-    tty: true
+    - sleep
+    args:
+    - 999999
+
     volumeMounts:
-    - name: docker-sock
-      mountPath: /var/run/docker.sock
+    - name: docker-config
+      mountPath: /kaniko/.docker
 
   volumes:
-  - name: docker-sock
-    hostPath:
-      path: /var/run/docker.sock
+  - name: docker-config
+    emptyDir: {}
 """
-            defaultContainer 'docker'
+            defaultContainer 'kaniko'
         }
     }
 
     environment {
         AWS_REGION = 'ap-south-1'
-        ECR_REPO_BACKEND = '806997205166.dkr.ecr.ap-south-1.amazonaws.com/3-tier-backend'
-        ECR_REPO_FRONTEND = '806997205166.dkr.ecr.ap-south-1.amazonaws.com/3-tier-frontend'
     }
 
     stages {
@@ -42,41 +43,35 @@ spec:
             }
         }
 
-        stage('Build Backend Image') {
+        stage('Build & Push Backend') {
             steps {
                 dir('backend') {
-                    sh 'docker build -t $ECR_REPO_BACKEND:latest .'
+                    sh '''
+                    mkdir -p /kaniko/.docker
+
+                    aws ecr get-login-password --region $AWS_REGION | \
+                    docker login --username AWS --password-stdin \
+                    806997205166.dkr.ecr.ap-south-1.amazonaws.com
+
+                    /kaniko/executor \
+                      --context `pwd` \
+                      --dockerfile Dockerfile \
+                      --destination 806997205166.dkr.ecr.ap-south-1.amazonaws.com/3-tier-backend:latest
+                    '''
                 }
             }
         }
 
-        stage('Build Frontend Image') {
+        stage('Build & Push Frontend') {
             steps {
                 dir('frontend') {
-                    sh 'docker build -t $ECR_REPO_FRONTEND:latest .'
+                    sh '''
+                    /kaniko/executor \
+                      --context `pwd` \
+                      --dockerfile Dockerfile \
+                      --destination 806997205166.dkr.ecr.ap-south-1.amazonaws.com/3-tier-frontend:latest
+                    '''
                 }
-            }
-        }
-
-        stage('Login to ECR') {
-            steps {
-                sh '''
-                aws ecr get-login-password --region $AWS_REGION | \
-                docker login --username AWS --password-stdin \
-                806997205166.dkr.ecr.ap-south-1.amazonaws.com
-                '''
-            }
-        }
-
-        stage('Push Backend Image') {
-            steps {
-                sh 'docker push $ECR_REPO_BACKEND:latest'
-            }
-        }
-
-        stage('Push Frontend Image') {
-            steps {
-                sh 'docker push $ECR_REPO_FRONTEND:latest'
             }
         }
 

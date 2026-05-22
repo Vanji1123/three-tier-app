@@ -12,15 +12,16 @@ spec:
 
   containers:
   - name: kaniko
-    image: gcr.io/kaniko-project/executor:latest
+  image: gcr.io/kaniko-project/executor:debug
 
-    command:
-    - /kaniko/executor
+  command:
+  - /busybox/sh
 
-    args:
-    - --help
+  args:
+  - -c
+  - sleep 999999
 
-    tty: true
+  tty: true
 
   volumeMounts:
   - name: docker-config

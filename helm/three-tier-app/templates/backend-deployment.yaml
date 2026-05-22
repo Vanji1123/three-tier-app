@@ -40,7 +40,7 @@ spec:
 
           env:
             - name: DB_PASSWORD
-              value: "Admin@123"
+              value: "Admin123"
 
           resources:
             requests:

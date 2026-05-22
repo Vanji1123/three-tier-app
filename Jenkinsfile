@@ -11,13 +11,11 @@ spec:
   serviceAccountName: jenkins-irsa
 
   containers:
-
   - name: kaniko
     image: gcr.io/kaniko-project/executor:latest
     command:
-    - sleep
-    args:
-    - 999999
+    - /busybox/cat
+    tty: true
 
     volumeMounts:
     - name: docker-config
@@ -33,6 +31,10 @@ spec:
 
     environment {
         AWS_REGION = 'ap-south-1'
+        ACCOUNT_ID = '806997205166'
+
+        BACKEND_IMAGE = "${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/3-tier-backend:latest"
+        FRONTEND_IMAGE = "${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/3-tier-frontend:latest"
     }
 
     stages {
@@ -45,40 +47,53 @@ spec:
 
         stage('Build & Push Backend') {
             steps {
-                dir('backend') {
-                    sh '''
-                    mkdir -p /kaniko/.docker
+                container('kaniko') {
+                    dir('backend') {
+                        sh '''
+                        mkdir -p /kaniko/.docker
 
-                    aws ecr get-login-password --region $AWS_REGION | \
-                    docker login --username AWS --password-stdin \
-                    806997205166.dkr.ecr.ap-south-1.amazonaws.com
+                        cat > /kaniko/.docker/config.json <<EOF
+{
+  "credsStore": "ecr-login"
+}
+EOF
 
-                    /kaniko/executor \
-                      --context `pwd` \
-                      --dockerfile Dockerfile \
-                      --destination 806997205166.dkr.ecr.ap-south-1.amazonaws.com/3-tier-backend:latest
-                    '''
+                        /kaniko/executor \
+                          --context `pwd` \
+                          --dockerfile Dockerfile \
+                          --destination $BACKEND_IMAGE \
+                          --verbosity=info
+                        '''
+                    }
                 }
             }
         }
 
         stage('Build & Push Frontend') {
             steps {
-                dir('frontend') {
-                    sh '''
-                    /kaniko/executor \
-                      --context `pwd` \
-                      --dockerfile Dockerfile \
-                      --destination 806997205166.dkr.ecr.ap-south-1.amazonaws.com/3-tier-frontend:latest
-                    '''
+                container('kaniko') {
+                    dir('frontend') {
+                        sh '''
+                        /kaniko/executor \
+                          --context `pwd` \
+                          --dockerfile Dockerfile \
+                          --destination $FRONTEND_IMAGE \
+                          --verbosity=info
+                        '''
+                    }
                 }
             }
         }
 
         stage('Deploy to EKS') {
             steps {
-                dir('helm/three-tier-app') {
-                    sh 'helm upgrade --install three-tier-app .'
+                container('kaniko') {
+                    dir('helm/three-tier-app') {
+                        sh '''
+                        helm upgrade --install three-tier-app . \
+                        --namespace default
+                        '''
+                    }
                 }
             }
         }

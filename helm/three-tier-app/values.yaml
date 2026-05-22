@@ -6,7 +6,7 @@ frontend:
   replicaCount: 2
 
   image:
-    repository: 806997205166.dkr.ecr.ap-south-1.amazonaws.com/3-tier-app-repo
+    repository: 806997205166.dkr.ecr.ap-south-1.amazonaws.com/3-tier-frontend
     tag: latest
 
   service:
@@ -29,7 +29,7 @@ backend:
   replicaCount: 2
 
   image:
-    repository: 806997205166.dkr.ecr.ap-south-1.amazonaws.com/3-tier-app-repo
+    repository: 806997205166.dkr.ecr.ap-south-1.amazonaws.com/3-tier-backend
     tag: latest
 
   service:

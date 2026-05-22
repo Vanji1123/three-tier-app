@@ -1,15 +1,37 @@
 pipeline {
 
-    agent any
+    agent {
+        kubernetes {
+            yaml """
+apiVersion: v1
+kind: Pod
+spec:
+  serviceAccountName: jenkins-irsa
+
+  containers:
+
+  - name: docker
+    image: docker:27.0.3
+    command:
+    - cat
+    tty: true
+    volumeMounts:
+    - name: docker-sock
+      mountPath: /var/run/docker.sock
+
+  volumes:
+  - name: docker-sock
+    hostPath:
+      path: /var/run/docker.sock
+"""
+            defaultContainer 'docker'
+        }
+    }
 
     environment {
-
         AWS_REGION = 'ap-south-1'
-
-        ECR_BACKEND = '806997205166.dkr.ecr.ap-south-1.amazonaws.com/3-tier-backend'
-
-        ECR_FRONTEND = '806997205166.dkr.ecr.ap-south-1.amazonaws.com/3-tier-frontend'
-
+        ECR_REPO_BACKEND = '806997205166.dkr.ecr.ap-south-1.amazonaws.com/3-tier-backend'
+        ECR_REPO_FRONTEND = '806997205166.dkr.ecr.ap-south-1.amazonaws.com/3-tier-frontend'
     }
 
     stages {
@@ -23,7 +45,7 @@ pipeline {
         stage('Build Backend Image') {
             steps {
                 dir('backend') {
-                    sh 'docker build -t $ECR_BACKEND:latest .'
+                    sh 'docker build -t $ECR_REPO_BACKEND:latest .'
                 }
             }
         }
@@ -31,7 +53,7 @@ pipeline {
         stage('Build Frontend Image') {
             steps {
                 dir('frontend') {
-                    sh 'docker build -t $ECR_FRONTEND:latest .'
+                    sh 'docker build -t $ECR_REPO_FRONTEND:latest .'
                 }
             }
         }
@@ -48,26 +70,22 @@ pipeline {
 
         stage('Push Backend Image') {
             steps {
-                sh 'docker push $ECR_BACKEND:latest'
+                sh 'docker push $ECR_REPO_BACKEND:latest'
             }
         }
 
         stage('Push Frontend Image') {
             steps {
-                sh 'docker push $ECR_FRONTEND:latest'
+                sh 'docker push $ECR_REPO_FRONTEND:latest'
             }
         }
 
         stage('Deploy to EKS') {
             steps {
-                sh '''
-                helm upgrade --install three-tier-app \
-                helm/three-tier-app \
-                -n three-tier
-                '''
+                dir('helm/three-tier-app') {
+                    sh 'helm upgrade --install three-tier-app .'
+                }
             }
         }
-
     }
-
 }

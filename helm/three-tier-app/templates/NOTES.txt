@@ -1,0 +1,13 @@
+Application deployed successfully.
+
+Check pods:
+
+kubectl get pods -n {{ .Values.namespace }}
+
+Check services:
+
+kubectl get svc -n {{ .Values.namespace }}
+
+Check ingress:
+
+kubectl get ingress -n {{ .Values.namespace }}

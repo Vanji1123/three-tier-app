@@ -1,0 +1,45 @@
+controller:
+  image:
+    registry: 806997205166.dkr.ecr.ap-south-1.amazonaws.com
+    repository: custom-jenkins
+    tag: latest
+
+  admin:
+    username: admin
+    password: admin123
+
+  servicePort: 8080
+
+  serviceType: LoadBalancer
+
+  serviceTargetPort: 8080
+
+  serviceAnnotations:
+    service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
+
+  installPlugins:
+    - kubernetes
+    - workflow-aggregator
+    - git
+    - docker-workflow
+
+  resources:
+
+    requests:
+      cpu: "200m"
+      memory: "512Mi"
+
+    limits:
+      cpu: "500m"
+      memory: "1Gi"
+
+  javaOpts: >-
+    -Xms512m -Xmx768m
+
+persistence:
+
+  enabled: true
+
+  storageClass: gp2
+
+  size: 5Gi

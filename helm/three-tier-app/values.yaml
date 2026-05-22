@@ -1,0 +1,74 @@
+namespace: three-tier
+
+frontend:
+  name: frontend
+
+  replicaCount: 2
+
+  image:
+    repository: 806997205166.dkr.ecr.ap-south-1.amazonaws.com/3-tier-app-repo
+    tag: latest
+
+  service:
+    type: ClusterIP
+    port: 80
+
+  resources:
+
+    requests:
+      cpu: "100m"
+      memory: "128Mi"
+
+    limits:
+      cpu: "250m"
+      memory: "256Mi"
+
+backend:
+  name: backend
+
+  replicaCount: 2
+
+  image:
+    repository: 806997205166.dkr.ecr.ap-south-1.amazonaws.com/3-tier-app-repo
+    tag: latest
+
+  service:
+    type: ClusterIP
+    port: 5000
+
+  env:
+    DB_HOST: rds-3-tier-app-db.czy4cyu8yfsp.ap-south-1.rds.amazonaws.com
+    DB_USER: admin
+    DB_NAME: userdb
+
+  resources:
+
+    requests:
+      cpu: "100m"
+      memory: "128Mi"
+
+    limits:
+      cpu: "500m"
+      memory: "512Mi"
+
+ingress:
+
+  enabled: true
+
+  className: alb
+
+  annotations:
+    kubernetes.io/ingress.class: alb
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/subnets: subnet-0a89a5004694dc6d2,subnet-0950f3548ba223f51
+
+autoscaling:
+
+  enabled: true
+
+  minReplicas: 2
+
+  maxReplicas: 5
+
+  targetCPUUtilizationPercentage: 70

@@ -1,0 +1,13 @@
+clusterName: 3-tier-app-eks-cluster
+
+region: ap-south-1
+
+vpcId: vpc-0284569ee0f1df3d4
+
+serviceAccount:
+
+  create: true
+
+  name: aws-load-balancer-controller
+
+replicaCount: 2

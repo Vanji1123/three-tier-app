@@ -1,0 +1,65 @@
+apiVersion: apps/v1
+
+kind: Deployment
+
+metadata:
+  name: {{ .Values.frontend.name }}
+  namespace: {{ .Values.namespace }}
+
+spec:
+  replicas: {{ .Values.frontend.replicaCount }}
+
+  selector:
+    matchLabels:
+      app: {{ .Values.frontend.name }}
+
+  template:
+
+    metadata:
+      labels:
+        app: {{ .Values.frontend.name }}
+
+    spec:
+
+      serviceAccountName: app-service-account
+
+      containers:
+
+        - name: frontend
+
+          image: "{{ .Values.frontend.image.repository }}:{{ .Values.frontend.image.tag }}"
+
+          imagePullPolicy: Always
+
+          ports:
+            - containerPort: 80
+
+          resources:
+
+            requests:
+              cpu: {{ .Values.frontend.resources.requests.cpu }}
+              memory: {{ .Values.frontend.resources.requests.memory }}
+
+            limits:
+              cpu: {{ .Values.frontend.resources.limits.cpu }}
+              memory: {{ .Values.frontend.resources.limits.memory }}
+
+          livenessProbe:
+
+            httpGet:
+              path: /
+              port: 80
+
+            initialDelaySeconds: 30
+
+            periodSeconds: 10
+
+          readinessProbe:
+
+            httpGet:
+              path: /
+              port: 80
+
+            initialDelaySeconds: 10
+
+            periodSeconds: 5

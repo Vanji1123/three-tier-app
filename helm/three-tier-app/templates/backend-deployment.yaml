@@ -1,0 +1,72 @@
+apiVersion: apps/v1
+
+kind: Deployment
+
+metadata:
+  name: {{ .Values.backend.name }}
+  namespace: {{ .Values.namespace }}
+
+spec:
+  replicas: {{ .Values.backend.replicaCount }}
+
+  selector:
+    matchLabels:
+      app: {{ .Values.backend.name }}
+
+  template:
+
+    metadata:
+      labels:
+        app: {{ .Values.backend.name }}
+
+    spec:
+
+      serviceAccountName: app-service-account
+
+      containers:
+
+        - name: backend
+
+          image: "{{ .Values.backend.image.repository }}:{{ .Values.backend.image.tag }}"
+
+          imagePullPolicy: Always
+
+          ports:
+            - containerPort: 5000
+
+          envFrom:
+            - configMapRef:
+                name: backend-config
+
+          env:
+            - name: DB_PASSWORD
+              value: "Admin@123"
+
+          resources:
+            requests:
+              cpu: {{ .Values.backend.resources.requests.cpu }}
+              memory: {{ .Values.backend.resources.requests.memory }}
+
+            limits:
+              cpu: {{ .Values.backend.resources.limits.cpu }}
+              memory: {{ .Values.backend.resources.limits.memory }}
+
+          livenessProbe:
+
+            httpGet:
+              path: /
+              port: 5000
+
+            initialDelaySeconds: 30
+
+            periodSeconds: 10
+
+          readinessProbe:
+
+            httpGet:
+              path: /
+              port: 5000
+
+            initialDelaySeconds: 10
+
+            periodSeconds: 5

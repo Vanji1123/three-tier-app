@@ -14,15 +14,14 @@ spec:
   - name: kaniko
     image: gcr.io/kaniko-project/executor:latest
     command:
-    - /bin/sh
+    - /kaniko/executor
     args:
-    - -c
-    - cat
+    - --help
     tty: true
 
     volumeMounts:
     - name: docker-config
-      mountPath: /kaniko/.docker
+    mountPath: /kaniko/.docker
 
   volumes:
   - name: docker-config

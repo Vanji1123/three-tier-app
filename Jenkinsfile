@@ -11,6 +11,7 @@ spec:
   serviceAccountName: jenkins-irsa
 
   containers:
+
     - name: kaniko
       image: gcr.io/kaniko-project/executor:debug
 
@@ -26,6 +27,18 @@ spec:
       volumeMounts:
         - name: docker-config
           mountPath: /kaniko/.docker
+
+    - name: helm
+      image: alpine/helm:3.14.4
+
+      command:
+        - /bin/sh
+
+      args:
+        - -c
+        - sleep 999999
+
+      tty: true
 
   volumes:
     - name: docker-config
@@ -53,39 +66,45 @@ spec:
 
         stage('Build & Push Backend') {
             steps {
-                dir('backend') {
-                    sh '''
-                    /kaniko/executor \
-                      --context $(pwd) \
-                      --dockerfile Dockerfile \
-                      --destination $BACKEND_IMAGE \
-                      --verbosity=info
-                    '''
+                container('kaniko') {
+                    dir('backend') {
+                        sh '''
+                        /kaniko/executor \
+                          --context $(pwd) \
+                          --dockerfile Dockerfile \
+                          --destination $BACKEND_IMAGE \
+                          --verbosity=info
+                        '''
+                    }
                 }
             }
         }
 
         stage('Build & Push Frontend') {
             steps {
-                dir('frontend') {
-                    sh '''
-                    /kaniko/executor \
-                      --context $(pwd) \
-                      --dockerfile Dockerfile \
-                      --destination $FRONTEND_IMAGE \
-                      --verbosity=info
-                    '''
+                container('kaniko') {
+                    dir('frontend') {
+                        sh '''
+                        /kaniko/executor \
+                          --context $(pwd) \
+                          --dockerfile Dockerfile \
+                          --destination $FRONTEND_IMAGE \
+                          --verbosity=info
+                        '''
+                    }
                 }
             }
         }
 
         stage('Deploy to EKS') {
             steps {
-                dir('helm/three-tier-app') {
-                    sh '''
-                    helm upgrade --install three-tier-app . \
-                    --namespace default
-                    '''
+                container('helm') {
+                    dir('helm/three-tier-app') {
+                        sh '''
+                        helm upgrade --install three-tier-app . \
+                        --namespace default
+                        '''
+                    }
                 }
             }
         }

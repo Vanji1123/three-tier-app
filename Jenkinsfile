@@ -6,7 +6,7 @@ pipeline {
 
             yaml '''
                 apiVersion: v1
-                    kind: Pod
+                kind: Pod
                 spec:
                     serviceAccountName: jenkins-irsa
 

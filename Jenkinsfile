@@ -12,23 +12,23 @@ pipeline {
 
                 containers:
 
-                - name: kaniko
-                image: gcr.io/kaniko-project/executor:debug
+                    - name: kaniko
+                    image: gcr.io/kaniko-project/executor:debug
 
                 command:
-                - /busybox/sh
+                    - /busybox/sh
 
                 args:
-                - -c
-                - sleep 999999
+                    - -c
+                    - sleep 999999
 
                 tty: true
 
-            volumeMounts:
-                - name: docker-config
-                mountPath: /kaniko/.docker
+                volumeMounts:
+                    - name: docker-config
+                    mountPath: /kaniko/.docker
 
-                - name: helm
+              - name: helm
                 image: alpine/helm:3.14.4
 
                 command:
@@ -42,9 +42,9 @@ pipeline {
 
             volumes:
                 - name: docker-config
-                emptyDir: {}
+                  emptyDir: {}
 '''
-            defaultContainer 'kaniko'
+                    defaultContainer 'kaniko'
         }
     }
 

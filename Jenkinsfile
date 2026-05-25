@@ -5,46 +5,46 @@ pipeline {
             inheritFrom 'default'
 
             yaml '''
-                apiVersion: v1
-                kind: Pod
-                spec:
-                    serviceAccountName: jenkins-irsa
+apiVersion: v1
+kind: Pod
+spec:
+  serviceAccountName: jenkins-irsa
 
-                containers:
+  containers:
 
-                    - name: kaniko
-                    image: gcr.io/kaniko-project/executor:debug
+    - name: kaniko
+      image: gcr.io/kaniko-project/executor:debug
 
-                command:
-                    - /busybox/sh
+      command:
+        - /busybox/sh
 
-                args:
-                    - -c
-                    - sleep 999999
+      args:
+        - -c
+        - sleep 999999
 
-                tty: true
+      tty: true
 
-                volumeMounts:
-                    - name: docker-config
-                    mountPath: /kaniko/.docker
+      volumeMounts:
+        - name: docker-config
+          mountPath: /kaniko/.docker
 
-              - name: helm
-                image: alpine/helm:3.14.4
+    - name: helm
+      image: alpine/helm:3.14.4
 
-                command:
-                    - /bin/sh
+      command:
+        - /bin/sh
 
-                args:
-                    - -c
-                    - sleep 999999
+      args:
+        - -c
+        - sleep 999999
 
-                tty: true
+      tty: true
 
-            volumes:
-                - name: docker-config
-                  emptyDir: {}
+  volumes:
+    - name: docker-config
+      emptyDir: {}
 '''
-                    defaultContainer 'kaniko'
+            defaultContainer 'kaniko'
         }
     }
 
